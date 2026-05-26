@@ -1,53 +1,35 @@
-# System Architecture & API Documentation
+# System Architecture and API Documentation
 
-VedaAI is structured as a decoupled, full-stack application consisting of a React-based Next.js frontend and a TypeScript Node/Express backend. Real-time updates, background scheduling, caching, and document rendering are handled via specialized modular services.
+VedaAI is structured as a decoupled full stack application consisting of a React based Next.js frontend and a TypeScript Node/Express backend. Realtime updates, background scheduling, caching, and document rendering are handled via specialized modular services.
 
----
+## Architecture Overview
 
-## 🏗️ Architecture Overview
+The system flow and component interactions are visualized in the Mermaid diagram below:
 
-The system flow and component interactions are outlined in the diagram below:
+```mermaid
+graph TD
+    Frontend["Next.js Frontend (Zustand, CSS Modules)"]
+    Backend["Express REST and WS Server (Shared Port)"]
+    Cache["Redis / In Memory Cache (60s TTL)"]
+    DB["MongoDB (Mongoose)"]
+    Queue["BullMQ / In Memory Queue"]
+    Workers["Gemini AI & PDFKit Workers"]
 
-```
-                  +-----------------------------------+
-                  |        Next.js Frontend           |
-                  |  (Zustand State, Vanilla CSS)    |
-                  +-----------------+-----------------+
-                                    |
-            REST APIs (Port 5001)   |   WebSockets (Port 5002)
-            ------------------------+------------------------
-            |                                               |
-            v                                               v
-+-----------+-----------+                      +------------+------------+
-|  Express REST Server  |                      |    WS WebSocket Server  |
-| (Routes, Controllers) |                      | (Progress Push Streams) |
-+-----------+-----+-----+                      +------------+------------+
-            |     |                                         ^
-            |     +--------------------+                    |
-     Caches |                          | Writes             | Triggers
-            v                          v                    |
-+-----------+-----------+      +-------+-------+      +-----+-----+
-|   Redis/Memory Cache  |      |    MongoDB    |      |  BullMQ/  |
-|  (60s TTL Cache Layer)|      |  (Mongoose)   |      | In-Memory |
-+-----------------------+      +---------------+      +-----+-----+
-                                                            |
-                                                            | Invokes
-                                                            v
-                                                   +--------+--------+
-                                                   | Gemini AI &     |
-                                                   | PDFKit Services |
-                                                   +-----------------+
+    Frontend -->|REST Requests & WebSocket Subscriptions| Backend
+    Backend -->|Read / Write Cache| Cache
+    Backend -->|Persist Assignments| DB
+    Backend -->|Trigger Jobs| Queue
+    Queue -->|Process Generation| Workers
+    Workers -->|Update Job Progress| Backend
 ```
 
 ### Architecture Core Principles
-1.  **Strict Schema Enforcement**: We configure Gemini 2.5 Flash using the structured JSON response schemas supported natively by the Google Gen AI SDK. This guarantees that the AI output perfectly matches our interface models.
-2.  **State Synchronization**: Zustand stores state changes locally. When a creation or regeneration request is submitted, the frontend opens a lightweight WebSocket connection to subscribe to real-time progress updates.
-3.  **Job Separation**: Creating an assignment does not block the HTTP thread. It writes a `pending` assignment to MongoDB, queues the job via BullMQ (or the in-memory scheduler), and returns a `201 Created` status immediately.
-4.  **On-The-Fly PDF Compilation**: Instead of storing bloated, static PDF files on disk, PDFs are compiled on-the-fly using PDFKit when the user clicks "Download". This ensures the PDF always reflects the latest state of the database and keeps disk usage extremely lean.
+1. **Strict Schema Enforcement**: We configure Gemini 2.5 Flash using the structured JSON response schemas supported natively by the Google Gen AI SDK. This guarantees that the AI output matches our interface models.
+2. **State Synchronization**: Zustand stores state changes locally. When a creation or regeneration request is submitted, the frontend opens a lightweight WebSocket connection to subscribe to realtime progress updates.
+3. **Job Separation**: Creating an assignment does not block the HTTP thread. It writes a `pending` assignment to MongoDB, queues the job via BullMQ (or the in memory scheduler), and returns a `201 Created` status immediately.
+4. **On The Fly PDF Compilation**: Instead of storing bloated, static PDF files on disk, PDFs are compiled on the fly using PDFKit when the user clicks "Download". This ensures the PDF always reflects the latest state of the database and keeps disk usage extremely lean.
 
----
-
-## 🗄️ Database Schema
+## Database Schema
 
 ### `Assignment` Schema
 This represents the root assignment entity stored inside MongoDB:
@@ -98,11 +80,9 @@ const AssignmentSchema = new Schema({
 }, { timestamps: true });
 ```
 
----
+## WebSocket Protocol
 
-## 📡 WebSocket Protocol (Port 5002)
-
-To enable live progress tracking during generation, the frontend establishes a WebSocket connection and subscribes to the assignment ID:
+To enable live progress tracking during generation, the frontend establishes a WebSocket connection on the shared HTTP server and subscribes to the assignment ID:
 
 ### 1. Client Subscription Packet
 ```json
@@ -122,11 +102,11 @@ To enable live progress tracking during generation, the frontend establishes a W
 ```
 
 ### 3. Server Progress Milestones (Pushed at each stage)
-*   **10%**: Pipeline initialized.
-*   **30%**: Google Gemini AI model invoked.
-*   **60%**: Structured JSON parsed and validated.
-*   **85%**: PDF layout mapped and compiled.
-*   **100%**: DB updated, PDF cached. Status set to `completed` or `failed`.
+* **10%**: Pipeline initialized.
+* **30%**: Google Gemini AI model invoked.
+* **60%**: Structured JSON parsed and validated.
+* **85%**: PDF layout mapped and compiled.
+* **100%**: DB updated, PDF cached. Status set to `completed` or `failed`.
 
 ```json
 {
@@ -140,14 +120,12 @@ To enable live progress tracking during generation, the frontend establishes a W
 }
 ```
 
----
-
-## 🔌 REST API Endpoints (Port 5001)
+## REST API Endpoints
 
 ### 1. System Health
-*   **Method**: `GET`
-*   **URL**: `/api/health`
-*   **Response**: `200 OK`
+* **Method**: `GET`
+* **URL**: `/api/health`
+* **Response**: `200 OK`
     ```json
     {
       "status": "ok",
@@ -156,17 +134,17 @@ To enable live progress tracking during generation, the frontend establishes a W
     ```
 
 ### 2. Fetch All Assignments
-*   **Method**: `GET`
-*   **URL**: `/api/assignments`
-*   **Caching**: Cached for 60 seconds.
-*   **Logic**: Automatically scans and updates assignments whose due dates have passed from `ongoing` to `due`.
-*   **Response**: `200 OK` (Array of Assignment objects)
+* **Method**: `GET`
+* **URL**: `/api/assignments`
+* **Caching**: Cached for 60 seconds.
+* **Logic**: Automatically scans and updates assignments whose due dates have passed from `ongoing` to `due`.
+* **Response**: `200 OK` (Array of Assignment objects)
 
 ### 3. Create New Assignment
-*   **Method**: `POST`
-*   **URL**: `/api/assignments`
-*   **Headers**: `Content-Type: application/json`
-*   **Body Schema**:
+* **Method**: `POST`
+* **URL**: `/api/assignments`
+* **Headers**: `Content-Type: application/json`
+* **Body Schema**:
     ```json
     {
       "title": "Weekly Biology Test",
@@ -182,24 +160,24 @@ To enable live progress tracking during generation, the frontend establishes a W
       ]
     }
     ```
-*   **Response**: `201 Created` (The saved `pending` assignment object)
+* **Response**: `201 Created` (The saved `pending` assignment object)
 
 ### 4. Fetch Assignment Details
-*   **Method**: `GET`
-*   **URL**: `/api/assignments/:id`
-*   **Caching**: Cached individually for 60 seconds.
-*   **Response**: `200 OK` (Single Assignment object)
+* **Method**: `GET`
+* **URL**: `/api/assignments/:id`
+* **Caching**: Cached individually for 60 seconds.
+* **Response**: `200 OK` (Single Assignment object)
 
 ### 5. Regenerate Assignment
-*   **Method**: `POST`
-*   **URL**: `/api/assignments/:id/regenerate`
-*   **Logic**: Resets status to `pending`, clears older results, and re-queues the background generation job.
-*   **Response**: `200 OK` (Reset Assignment object)
+* **Method**: `POST`
+* **URL**: `/api/assignments/:id/regenerate`
+* **Logic**: Resets status to `pending`, clears older results, and re-queues the background generation job.
+* **Response**: `200 OK` (Reset Assignment object)
 
 ### 6. Delete Assignment
-*   **Method**: `DELETE`
-*   **URL**: `/api/assignments/:id`
-*   **Response**: `200 OK`
+* **Method**: `DELETE`
+* **URL**: `/api/assignments/:id`
+* **Response**: `200 OK`
     ```json
     {
       "success": true,
@@ -208,20 +186,20 @@ To enable live progress tracking during generation, the frontend establishes a W
     ```
 
 ### 7. Update Lifecycle Status
-*   **Method**: `PATCH`
-*   **URL**: `/api/assignments/:id/status`
-*   **Body**:
+* **Method**: `PATCH`
+* **URL**: `/api/assignments/:id/status`
+* **Body**:
     ```json
     {
       "status": "completed"
     }
     ```
-*   **Response**: `200 OK` (Updated Assignment object)
+* **Response**: `200 OK` (Updated Assignment object)
 
 ### 8. Download PDF
-*   **Method**: `GET`
-*   **URL**: `/api/assignments/:id/download`
-*   **Headers Sent**:
-    *   `Content-Type: application/pdf`
-    *   `Content-Disposition: attachment; filename="weekly_biology_test_question_paper.pdf"`
-*   **Logic**: Compiles the assignment data into a beautiful, double-bordered A4 document on-the-fly and streams the vector stream directly to the client.
+* **Method**: `GET`
+* **URL**: `/api/assignments/:id/download`
+* **Headers Sent**:
+    * `Content-Type: application/pdf`
+    * `Content-Disposition: attachment; filename="weekly_biology_test_question_paper.pdf"`
+* **Logic**: Compiles the assignment data into a beautiful, double bordered A4 document on the fly and streams the vector stream directly to the client.
