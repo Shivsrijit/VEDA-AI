@@ -95,7 +95,7 @@ export default function Sidebar({ activeTab = 'assignments', isOpen = false, onC
               <FileText size={18} />
               <span>Assignments</span>
             </div>
-            <span className={styles.badge}>{assignments.length || 10}</span>
+            <span className={styles.badge}>{assignments.length}</span>
           </a>
         </li>
         <li className={styles.navItem}>
