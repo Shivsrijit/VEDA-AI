@@ -6,7 +6,7 @@ import { useAssignmentStore } from '../store/useAssignmentStore';
 import styles from '../styles/paper.module.css';
 
 export default function QuestionPaper() {
-  const { currentAssignment, setStep, regenerateAssignment } = useAssignmentStore();
+  const { currentAssignment, setStep, regenerateAssignment, userName } = useAssignmentStore();
 
   if (!currentAssignment || !currentAssignment.result) {
     return (
@@ -86,7 +86,7 @@ export default function QuestionPaper() {
       <div className={`${styles.aiBanner} no-print`}>
         <div className={styles.aiBannerText}>
           <p className={styles.aiBannerTitle}>
-            Certainly, <span className={styles.aiBannerHighlight}>Lakshya</span>! Here is the customized Question Paper for your CBSE Class 8 Science/NCERT standard curriculum.
+            Certainly, <span className={styles.aiBannerHighlight}>{userName}</span>! Here is the customized Question Paper for your CBSE Class 8 Science/NCERT standard curriculum.
           </p>
         </div>
         

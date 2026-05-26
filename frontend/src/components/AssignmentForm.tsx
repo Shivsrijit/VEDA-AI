@@ -399,6 +399,7 @@ export default function AssignmentForm() {
           {/* Table/Row Headers matching figma */}
           <div className={styles.questionConfigHeader}>
             <span className={styles.headerLabel}>Question Type</span>
+            <span />
             <span className={styles.headerLabel} style={{ textAlign: 'center' }}>No. of Questions</span>
             <span className={styles.headerLabel} style={{ textAlign: 'center' }}>Marks</span>
           </div>

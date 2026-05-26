@@ -418,7 +418,7 @@
   }
   
   .questionRow {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr auto;
     gap: 14px !important;
     padding: 18px !important;
     border: 1px solid var(--border-color);
@@ -450,6 +450,7 @@
     justify-content: space-between !important;
     width: 100% !important;
     gap: 16px !important;
+    grid-column: span 2;
   }
 
   .counterControlLabel {
