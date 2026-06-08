@@ -47,21 +47,6 @@ export interface IAssignment {
   updatedAt: string;
 }
 
-const getLocalStorage = (key: string, fallback: string): string => {
-  if (typeof window !== 'undefined') {
-    return window.localStorage.getItem(key) || fallback;
-  }
-  return fallback;
-};
-
-const getLocalStorageBool = (key: string, fallback: boolean): boolean => {
-  if (typeof window !== 'undefined') {
-    const val = window.localStorage.getItem(key);
-    if (val !== null) return val === 'true';
-  }
-  return fallback;
-};
-
 interface AssignmentState {
   assignments: IAssignment[];
   currentAssignment: IAssignment | null;
@@ -71,7 +56,12 @@ interface AssignmentState {
   error: string | null;
   wsConnected: boolean;
 
-  // Persistent Settings properties
+  // Authentication & Session state
+  token: string | null;
+  user: any | null;
+  isAuthenticated: boolean;
+
+  // Profile properties
   schoolName: string;
   schoolAddress: string;
   schoolLogo: string;
@@ -93,10 +83,18 @@ interface AssignmentState {
   updateSettings: (settings: { schoolName?: string; schoolAddress?: string; schoolLogo?: string; userName?: string; userAvatar?: string; }) => void;
   toggleTheme: () => void;
   initializeSettings: () => void;
+
+  // Auth actions
+  login: (email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string, schoolName: string) => Promise<void>;
+  logout: () => void;
+  updateProfile: (profileData: any) => Promise<void>;
+  checkAuth: () => Promise<void>;
 }
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5001/api';
 let socket: WebSocket | null = null;
+const cleanAddress = (addr: string | undefined) => (addr && addr.trim() !== '' && addr !== 'Bokaro Steel City') ? addr : 'School Location Here';
 
 export const useAssignmentStore = create<AssignmentState>((set, get) => ({
   assignments: [],
@@ -107,24 +105,23 @@ export const useAssignmentStore = create<AssignmentState>((set, get) => ({
   error: null,
   wsConnected: false,
 
+  // Auth details
+  token: null,
+  user: null,
+  isAuthenticated: false,
+
   // Initialize statically to prevent Next.js SSR hydration mismatch
-  schoolName: 'Delhi Public School',
-  schoolAddress: 'Bokaro Steel City',
+  schoolName: 'School Name Here',
+  schoolAddress: 'School Location Here',
   schoolLogo: 'https://i.pinimg.com/736x/c9/03/f8/c903f84b3130bee7c5b9ae6388360b25.jpg',
-  userName: 'Shivsrijit',
+  userName: 'Teacher Name',
   userAvatar: 'https://static.vecteezy.com/system/resources/previews/015/413/618/non_2x/elegant-man-in-business-suit-with-badge-man-business-avatar-profile-picture-illustration-isolated-vector.jpg',
   darkMode: false,
 
   initializeSettings: () => {
     if (typeof window !== 'undefined') {
-      set({
-        schoolName: window.localStorage.getItem('veda_school_name') || 'Delhi Public School',
-        schoolAddress: window.localStorage.getItem('veda_school_address') || 'Bokaro Steel City',
-        schoolLogo: window.localStorage.getItem('veda_school_logo') || 'https://i.pinimg.com/736x/c9/03/f8/c903f84b3130bee7c5b9ae6388360b25.jpg',
-        userName: window.localStorage.getItem('veda_user_name') || 'Shivsrijit',
-        userAvatar: window.localStorage.getItem('veda_user_avatar') || 'https://static.vecteezy.com/system/resources/previews/015/413/618/non_2x/elegant-man-in-business-suit-with-badge-man-business-avatar-profile-picture-illustration-isolated-vector.jpg',
-        darkMode: window.localStorage.getItem('veda_dark_mode') === 'true'
-      });
+      const darkMode = window.localStorage.getItem('qraft_dark_mode') === 'true';
+      set({ darkMode });
     }
   },
 
@@ -135,41 +132,209 @@ export const useAssignmentStore = create<AssignmentState>((set, get) => ({
   setCurrentAssignment: (assignment) => set({ currentAssignment: assignment }),
 
   updateSettings: (settings) => {
-    set((state) => {
-      const updated = {
-        schoolName: settings.schoolName !== undefined ? settings.schoolName : state.schoolName,
-        schoolAddress: settings.schoolAddress !== undefined ? settings.schoolAddress : state.schoolAddress,
-        schoolLogo: settings.schoolLogo !== undefined ? settings.schoolLogo : state.schoolLogo,
-        userName: settings.userName !== undefined ? settings.userName : state.userName,
-        userAvatar: settings.userAvatar !== undefined ? settings.userAvatar : state.userAvatar,
-      };
-      
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem('veda_school_name', updated.schoolName);
-        window.localStorage.setItem('veda_school_address', updated.schoolAddress);
-        window.localStorage.setItem('veda_school_logo', updated.schoolLogo);
-        window.localStorage.setItem('veda_user_name', updated.userName);
-        window.localStorage.setItem('veda_user_avatar', updated.userAvatar);
-      }
-      
-      return updated;
-    });
+    // Backwards compatible settings update wrapper (updates profile instead)
+    get().updateProfile(settings).catch((err) => console.error('Settings update error:', err));
   },
 
   toggleTheme: () => {
     set((state) => {
       const newMode = !state.darkMode;
       if (typeof window !== 'undefined') {
-        window.localStorage.setItem('veda_dark_mode', String(newMode));
+        window.localStorage.setItem('qraft_dark_mode', String(newMode));
       }
       return { darkMode: newMode };
     });
   },
 
-  fetchAssignments: async () => {
+  // Auth actions
+  login: async (email, password) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await fetch(`${API_BASE_URL}/assignments`);
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || 'Failed to login.');
+      }
+
+      const data = await response.json();
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('qraft_token', data.token);
+      }
+
+      set({
+        token: data.token,
+        user: data.user,
+        isAuthenticated: true,
+        userName: data.user.name,
+        schoolName: data.user.schoolName,
+        schoolAddress: cleanAddress(data.user.schoolAddress),
+        schoolLogo: data.user.schoolLogo || 'https://i.pinimg.com/736x/c9/03/f8/c903f84b3130bee7c5b9ae6388360b25.jpg',
+        userAvatar: data.user.userAvatar || 'https://static.vecteezy.com/system/resources/previews/015/413/618/non_2x/elegant-man-in-business-suit-with-badge-man-business-avatar-profile-picture-illustration-isolated-vector.jpg',
+        isLoading: false,
+        error: null,
+      });
+
+      await get().fetchAssignments();
+    } catch (err: any) {
+      set({ error: err.message || 'Login failed', isLoading: false });
+      throw err;
+    }
+  },
+
+  register: async (name, email, password, schoolName) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password, schoolName }),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || 'Failed to register.');
+      }
+
+      const data = await response.json();
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('qraft_token', data.token);
+      }
+
+      set({
+        token: data.token,
+        user: data.user,
+        isAuthenticated: true,
+        userName: data.user.name,
+        schoolName: data.user.schoolName,
+        schoolAddress: cleanAddress(data.user.schoolAddress),
+        schoolLogo: data.user.schoolLogo || 'https://i.pinimg.com/736x/c9/03/f8/c903f84b3130bee7c5b9ae6388360b25.jpg',
+        userAvatar: data.user.userAvatar || 'https://static.vecteezy.com/system/resources/previews/015/413/618/non_2x/elegant-man-in-business-suit-with-badge-man-business-avatar-profile-picture-illustration-isolated-vector.jpg',
+        isLoading: false,
+        error: null,
+      });
+
+      await get().fetchAssignments();
+    } catch (err: any) {
+      set({ error: err.message || 'Registration failed', isLoading: false });
+      throw err;
+    }
+  },
+
+  logout: () => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem('qraft_token');
+    }
+    set({
+      token: null,
+      user: null,
+      isAuthenticated: false,
+      assignments: [],
+      currentAssignment: null,
+      activeView: 'home',
+      activeStep: 1,
+      userName: 'Teacher Name',
+      schoolName: 'School Name Here',
+      schoolAddress: 'School Location Here',
+      schoolLogo: 'https://i.pinimg.com/736x/c9/03/f8/c903f84b3130bee7c5b9ae6388360b25.jpg',
+      userAvatar: 'https://static.vecteezy.com/system/resources/previews/015/413/618/non_2x/elegant-man-in-business-suit-with-badge-man-business-avatar-profile-picture-illustration-isolated-vector.jpg',
+    });
+    get().disconnectWebSocket();
+  },
+
+  updateProfile: async (profileData) => {
+    const token = get().token;
+    if (!token) return;
+    set({ isLoading: true, error: null });
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/update`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(profileData),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || 'Failed to update profile.');
+      }
+
+      const updatedUser = await response.json();
+      set({
+        user: updatedUser,
+        userName: updatedUser.name,
+        schoolName: updatedUser.schoolName,
+        schoolAddress: cleanAddress(updatedUser.schoolAddress),
+        schoolLogo: updatedUser.schoolLogo || 'https://i.pinimg.com/736x/c9/03/f8/c903f84b3130bee7c5b9ae6388360b25.jpg',
+        userAvatar: updatedUser.userAvatar || 'https://static.vecteezy.com/system/resources/previews/015/413/618/non_2x/elegant-man-in-business-suit-with-badge-man-business-avatar-profile-picture-illustration-isolated-vector.jpg',
+        isLoading: false,
+        error: null
+      });
+    } catch (err: any) {
+      set({ error: err.message || 'Failed to update profile', isLoading: false });
+      throw err;
+    }
+  },
+
+  checkAuth: async () => {
+    if (typeof window === 'undefined') return;
+    const token = window.localStorage.getItem('qraft_token');
+    const darkMode = window.localStorage.getItem('qraft_dark_mode') === 'true';
+    set({ darkMode });
+
+    if (!token) {
+      set({ isAuthenticated: false, token: null, user: null });
+      return;
+    }
+
+    set({ isLoading: true, token });
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Session expired');
+      }
+
+      const user = await response.json();
+      set({
+        user,
+        isAuthenticated: true,
+        userName: user.name,
+        schoolName: user.schoolName,
+        schoolAddress: cleanAddress(user.schoolAddress),
+        schoolLogo: user.schoolLogo || 'https://i.pinimg.com/736x/c9/03/f8/c903f84b3130bee7c5b9ae6388360b25.jpg',
+        userAvatar: user.userAvatar || 'https://static.vecteezy.com/system/resources/previews/015/413/618/non_2x/elegant-man-in-business-suit-with-badge-man-business-avatar-profile-picture-illustration-isolated-vector.jpg',
+        isLoading: false,
+      });
+
+      await get().fetchAssignments();
+    } catch (err) {
+      console.warn('Auth check failed or session expired, logging out:', err);
+      window.localStorage.removeItem('qraft_token');
+      set({ isAuthenticated: false, token: null, user: null, isLoading: false });
+    }
+  },
+
+  fetchAssignments: async () => {
+    const token = get().token;
+    if (!token) return;
+    set({ isLoading: true, error: null });
+    try {
+      const response = await fetch(`${API_BASE_URL}/assignments`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch assignments list.');
       }
@@ -181,9 +346,15 @@ export const useAssignmentStore = create<AssignmentState>((set, get) => ({
   },
 
   fetchAssignmentById: async (id) => {
+    const token = get().token;
+    if (!token) throw new Error('Unauthenticated');
     set({ isLoading: true, error: null });
     try {
-      const response = await fetch(`${API_BASE_URL}/assignments/${id}`);
+      const response = await fetch(`${API_BASE_URL}/assignments/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch assignment details.');
       }
@@ -197,12 +368,15 @@ export const useAssignmentStore = create<AssignmentState>((set, get) => ({
   },
 
   createAssignment: async (formData) => {
+    const token = get().token;
+    if (!token) throw new Error('Unauthenticated');
     set({ isLoading: true, error: null });
     try {
       const response = await fetch(`${API_BASE_URL}/assignments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(formData),
       });
@@ -233,10 +407,15 @@ export const useAssignmentStore = create<AssignmentState>((set, get) => ({
   },
 
   regenerateAssignment: async (id) => {
+    const token = get().token;
+    if (!token) return;
     set({ isLoading: true, error: null });
     try {
       const response = await fetch(`${API_BASE_URL}/assignments/${id}/regenerate`, {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       if (!response.ok) {
@@ -263,10 +442,15 @@ export const useAssignmentStore = create<AssignmentState>((set, get) => ({
   },
 
   deleteAssignment: async (id) => {
+    const token = get().token;
+    if (!token) return;
     set({ isLoading: true, error: null });
     try {
       const response = await fetch(`${API_BASE_URL}/assignments/${id}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       if (!response.ok) {
@@ -286,6 +470,8 @@ export const useAssignmentStore = create<AssignmentState>((set, get) => ({
   },
 
   updateAssignmentStatus: async (id, status) => {
+    const token = get().token;
+    if (!token) return;
     set((state) => ({
       assignments: state.assignments.map((asm) =>
         asm._id === id ? { ...asm, lifecycleStatus: status } : asm
@@ -301,6 +487,7 @@ export const useAssignmentStore = create<AssignmentState>((set, get) => ({
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ status }),
       });

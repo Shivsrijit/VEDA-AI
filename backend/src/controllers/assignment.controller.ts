@@ -1,12 +1,18 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import Assignment from '../models/Assignment';
 import { addGenerationJob } from '../services/queue.service';
 import { getCache, setCache, delCache, invalidateAssignmentsCache } from '../services/cache.service';
 import { generatePDF } from '../services/pdf.service';
+import { AuthRequest } from '../middleware/auth';
 
 // Create a new assignment assessment paper and queue its generation
-export async function createAssignment(req: Request, res: Response) {
+export async function createAssignment(req: AuthRequest, res: Response) {
   try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized: User authentication required.' });
+    }
+
     const { 
       title, 
       schoolName,
@@ -75,8 +81,9 @@ export async function createAssignment(req: Request, res: Response) {
       }
     }
 
-    // 3. Write pending state to database
+    // 3. Write pending state to database, associated with authenticated user
     const newAssignment = new Assignment({
+      user: userId,
       title: title.trim(),
       schoolName: schoolName.trim(),
       subject: subject.trim(),
@@ -95,8 +102,8 @@ export async function createAssignment(req: Request, res: Response) {
 
     const savedAssignment = await newAssignment.save();
 
-    // 4. Invalidate global list cache
-    await invalidateAssignmentsCache();
+    // 4. Invalidate user-specific assignments list cache
+    await invalidateAssignmentsCache(userId);
 
     // 5. Queue background processing worker job
     await addGenerationJob(savedAssignment.id);
@@ -109,17 +116,22 @@ export async function createAssignment(req: Request, res: Response) {
   }
 }
 
-// Fetch all assignments
-export async function getAssignments(req: Request, res: Response) {
+// Fetch all assignments for the authenticated user
+export async function getAssignments(req: AuthRequest, res: Response) {
   try {
-    const cacheKey = 'assignments:all';
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized: User authentication required.' });
+    }
+
+    const cacheKey = `assignments:user:${userId}:all`;
     const cached = await getCache<any[]>(cacheKey);
     if (cached) {
-      console.log('Serving assignments list from cache');
+      console.log(`Serving assignments list from cache for user: ${userId}`);
       return res.status(200).json(cached);
     }
 
-    const assignments = await Assignment.find().sort({ createdAt: -1 });
+    const assignments = await Assignment.find({ user: userId }).sort({ createdAt: -1 });
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -143,20 +155,25 @@ export async function getAssignments(req: Request, res: Response) {
 }
 
 // Fetch a single assignment by ID
-export async function getAssignmentById(req: Request, res: Response) {
+export async function getAssignmentById(req: AuthRequest, res: Response) {
   try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized: User authentication required.' });
+    }
+
     const assignmentId = req.params.id;
     const cacheKey = `assignments:id:${assignmentId}`;
     
     const cached = await getCache<any>(cacheKey);
-    if (cached) {
-      console.log(`Serving assignment details [ID: ${assignmentId}] from cache`);
+    if (cached && cached.user && String(cached.user) === userId) {
+      console.log(`Serving assignment details [ID: ${assignmentId}] from cache for user: ${userId}`);
       return res.status(200).json(cached);
     }
 
-    const assignment = await Assignment.findById(assignmentId);
+    const assignment = await Assignment.findOne({ _id: assignmentId, user: userId });
     if (!assignment) {
-      return res.status(404).json({ error: 'Assignment not found' });
+      return res.status(404).json({ error: 'Assignment not found or access denied.' });
     }
 
     const today = new Date();
@@ -164,7 +181,7 @@ export async function getAssignmentById(req: Request, res: Response) {
     if (assignment.dueDate < today && assignment.lifecycleStatus === 'ongoing') {
       assignment.lifecycleStatus = 'due';
       await assignment.save();
-      await delCache('assignments:all');
+      await delCache(`assignments:user:${userId}:all`);
     }
 
     // Cache the specific assignment details for 60 seconds
@@ -178,11 +195,16 @@ export async function getAssignmentById(req: Request, res: Response) {
 }
 
 // Re-queue an assignment for regeneration
-export async function regenerateAssignment(req: Request, res: Response) {
+export async function regenerateAssignment(req: AuthRequest, res: Response) {
   try {
-    const assignment = await Assignment.findById(req.params.id);
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized: User authentication required.' });
+    }
+
+    const assignment = await Assignment.findOne({ _id: req.params.id, user: userId });
     if (!assignment) {
-      return res.status(404).json({ error: 'Assignment not found' });
+      return res.status(404).json({ error: 'Assignment not found or access denied.' });
     }
 
     // Reset status parameters
@@ -195,7 +217,7 @@ export async function regenerateAssignment(req: Request, res: Response) {
     const updatedAssignment = await assignment.save();
 
     // Invalidate caches
-    await invalidateAssignmentsCache(assignment.id);
+    await invalidateAssignmentsCache(userId, assignment.id);
 
     // Re-queue the generation job
     await addGenerationJob(updatedAssignment.id);
@@ -209,18 +231,23 @@ export async function regenerateAssignment(req: Request, res: Response) {
 }
 
 // Delete a single assignment by ID
-export async function deleteAssignment(req: Request, res: Response) {
+export async function deleteAssignment(req: AuthRequest, res: Response) {
   try {
-    const assignmentId = req.params.id;
-    const assignment = await Assignment.findById(assignmentId);
-    if (!assignment) {
-      return res.status(404).json({ error: 'Assignment not found' });
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized: User authentication required.' });
     }
 
-    await Assignment.findByIdAndDelete(assignmentId);
+    const assignmentId = req.params.id;
+    const assignment = await Assignment.findOne({ _id: assignmentId, user: userId });
+    if (!assignment) {
+      return res.status(404).json({ error: 'Assignment not found or access denied.' });
+    }
+
+    await Assignment.deleteOne({ _id: assignmentId, user: userId });
 
     // Invalidate caches
-    await invalidateAssignmentsCache(assignmentId);
+    await invalidateAssignmentsCache(userId, assignmentId);
 
     return res.status(200).json({ success: true, message: 'Assignment successfully deleted.' });
   } catch (err) {
@@ -230,13 +257,18 @@ export async function deleteAssignment(req: Request, res: Response) {
 }
 
 // Dynamically generate and stream the PDF to the user's PC on the fly
-export async function downloadAssignmentPDF(req: Request, res: Response) {
+export async function downloadAssignmentPDF(req: AuthRequest, res: Response) {
   try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized: User authentication required.' });
+    }
+
     const assignmentId = req.params.id;
-    const assignment = await Assignment.findById(assignmentId);
+    const assignment = await Assignment.findOne({ _id: assignmentId, user: userId });
     
     if (!assignment) {
-      return res.status(404).json({ error: 'Assignment not found' });
+      return res.status(404).json({ error: 'Assignment not found or access denied.' });
     }
     
     if (assignment.status !== 'completed' || !assignment.result) {
@@ -265,8 +297,13 @@ export async function downloadAssignmentPDF(req: Request, res: Response) {
 }
 
 // Update assignment lifecycle status (ongoing | due | completed)
-export async function updateAssignmentLifecycleStatus(req: Request, res: Response) {
+export async function updateAssignmentLifecycleStatus(req: AuthRequest, res: Response) {
   try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized: User authentication required.' });
+    }
+
     const assignmentId = req.params.id;
     const { status } = req.body;
 
@@ -274,16 +311,16 @@ export async function updateAssignmentLifecycleStatus(req: Request, res: Respons
       return res.status(400).json({ error: 'Valid lifecycle status (ongoing, due, completed) is required.' });
     }
 
-    const assignment = await Assignment.findById(assignmentId);
+    const assignment = await Assignment.findOne({ _id: assignmentId, user: userId });
     if (!assignment) {
-      return res.status(404).json({ error: 'Assignment not found' });
+      return res.status(404).json({ error: 'Assignment not found or access denied.' });
     }
 
     assignment.lifecycleStatus = status;
     const updatedAssignment = await assignment.save();
 
     // Invalidate caches
-    await invalidateAssignmentsCache(assignmentId);
+    await invalidateAssignmentsCache(userId, assignmentId);
 
     return res.status(200).json(updatedAssignment);
   } catch (err) {

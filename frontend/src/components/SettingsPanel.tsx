@@ -1,21 +1,23 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Save, School, User, Moon, Sun, CheckCircle } from 'lucide-react';
+import { Save, School, User, Moon, Sun, CheckCircle, LogOut } from 'lucide-react';
 import { useAssignmentStore } from '../store/useAssignmentStore';
 import styles from '../styles/settings.module.css';
 
 export default function SettingsPanel() {
   const { 
+    user,
     schoolName, 
     schoolAddress, 
     schoolLogo, 
     userName, 
     userAvatar, 
     darkMode, 
-    updateSettings, 
+    updateProfile, 
     toggleTheme,
-    setView
+    setView,
+    logout
   } = useAssignmentStore();
 
   const [sName, setSName] = useState(schoolName);
@@ -23,6 +25,8 @@ export default function SettingsPanel() {
   const [sLogo, setSLogo] = useState(schoolLogo);
   const [uName, setUName] = useState(userName);
   const [uAvatar, setUAvatar] = useState(userAvatar);
+  const [email, setEmail] = useState(user?.email || '');
+  const [password, setPassword] = useState('');
   const [localDarkMode, setLocalDarkMode] = useState(darkMode);
   
   const [showSavedToast, setShowSavedToast] = useState(false);
@@ -41,23 +45,35 @@ export default function SettingsPanel() {
     };
   }, []);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateSettings({
-      schoolName: sName,
-      schoolAddress: sAddress,
-      schoolLogo: sLogo,
-      userName: uName,
-      userAvatar: uAvatar
-    });
-    
-    // Save theme choice to store and localStorage permanently only on submit
-    if (localDarkMode !== darkMode) {
-      toggleTheme();
+    try {
+      const updateData: any = {
+        schoolName: sName,
+        schoolAddress: sAddress,
+        schoolLogo: sLogo,
+        name: uName,
+        userAvatar: uAvatar,
+        email: email,
+      };
+
+      if (password.trim() !== '') {
+        updateData.password = password;
+      }
+
+      await updateProfile(updateData);
+      
+      // Save theme choice to store and localStorage permanently only on submit
+      if (localDarkMode !== darkMode) {
+        toggleTheme();
+      }
+      
+      setShowSavedToast(true);
+      setPassword(''); // clear password field
+      setTimeout(() => setShowSavedToast(false), 3000);
+    } catch (err) {
+      console.error('Failed to save user settings:', err);
     }
-    
-    setShowSavedToast(true);
-    setTimeout(() => setShowSavedToast(false), 3000);
   };
 
   const handleToggleTheme = () => {
@@ -84,6 +100,12 @@ export default function SettingsPanel() {
       }
     }
     setView('list');
+  };
+
+  const handleLogout = () => {
+    if (window.confirm('Are you sure you want to log out of your session?')) {
+      logout();
+    }
   };
 
   return (
@@ -135,7 +157,7 @@ export default function SettingsPanel() {
                 type="text" 
                 value={sName} 
                 onChange={(e) => setSName(e.target.value)}
-                placeholder="e.g. Delhi Public School"
+                placeholder="School Name Here"
                 required
               />
             </div>
@@ -146,7 +168,7 @@ export default function SettingsPanel() {
                 type="text" 
                 value={sAddress} 
                 onChange={(e) => setSAddress(e.target.value)}
-                placeholder="e.g. Bokaro Steel City"
+                placeholder="School Location Here"
                 required
               />
             </div>
@@ -192,8 +214,29 @@ export default function SettingsPanel() {
                 type="text" 
                 value={uName} 
                 onChange={(e) => setUName(e.target.value)}
-                placeholder="e.g. Lakshya"
+                placeholder="Your Name"
                 required
+              />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Email Address</label>
+              <input 
+                type="email" 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="teacher@school.edu"
+                required
+              />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Change Password (leave empty to keep current)</label>
+              <input 
+                type="password" 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="•••••••• (Min 6 characters)"
               />
             </div>
           </div>
@@ -231,6 +274,15 @@ export default function SettingsPanel() {
 
         {/* Form Action triggers */}
         <div className={styles.actionsRow}>
+          <button 
+            type="button" 
+            className={styles.logoutBtn}
+            onClick={handleLogout}
+          >
+            <LogOut size={16} style={{ marginRight: '6px', display: 'inline-block', verticalAlign: 'middle' }} />
+            <span>Sign Out</span>
+          </button>
+
           <button 
             type="button" 
             className={styles.cancelBtn}

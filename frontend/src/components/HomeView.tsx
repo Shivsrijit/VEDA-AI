@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Sparkles, ClipboardList, Wand2, Settings, ArrowRight, BookOpen, GraduationCap } from 'lucide-react';
+import { FilePlus, ClipboardList, Wand2, Settings, ArrowRight, BookOpen, GraduationCap } from 'lucide-react';
 import { useAssignmentStore } from '../store/useAssignmentStore';
 import styles from '../styles/home.module.css';
 
@@ -29,7 +29,7 @@ export default function HomeView() {
             Hii, <span className={styles.greetingOrange}>{userName || 'Teacher'}</span>!
           </h2>
           <p className={styles.subheading}>
-            Welcome back to VedaAI. Streamline your classroom administration, dynamically compile syllabus-compliant question papers, and download formatted assessments in seconds.
+            Welcome back to QRaft. Streamline your classroom administration, dynamically compile syllabus-compliant question papers, and download formatted assessments in seconds.
           </p>
         </div>
         <div className={styles.decorativeCircle} />
@@ -79,7 +79,7 @@ export default function HomeView() {
         {/* Create Assignment Paper */}
         <div className={styles.actionCard} onClick={handleCreateNew}>
           <div className={styles.actionIcon}>
-            <Sparkles size={24} />
+            <FilePlus size={24} />
           </div>
           <div className={styles.actionContent}>
             <h4 className={styles.actionTitle}>Create Assignment</h4>

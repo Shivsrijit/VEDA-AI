@@ -9,7 +9,7 @@
 
 /* Greeting Hero section */
 .heroSection {
-  background: linear-gradient(135deg, rgba(255, 94, 26, 0.05) 0%, rgba(255, 94, 26, 0.01) 100%);
+  background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.04) 0%, rgba(var(--primary-rgb), 0.01) 100%);
   border: 1px solid var(--border-color);
   border-radius: 24px;
   padding: 40px;
@@ -20,7 +20,7 @@
 }
 
 .heroSection:hover {
-  border-color: rgba(255, 94, 26, 0.25);
+  border-color: rgba(var(--primary-rgb), 0.25);
 }
 
 .heroContent {
@@ -55,7 +55,7 @@
   width: 300px;
   height: 300px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 94, 26, 0.1) 0%, rgba(255, 94, 26, 0) 70%);
+  background: radial-gradient(circle, rgba(var(--primary-rgb), 0.08) 0%, rgba(var(--primary-rgb), 0) 70%);
   z-index: 1;
   pointer-events: none;
 }
@@ -224,7 +224,7 @@
 
 /* Dark mode specific HSL adjustments */
 :global(.dark-theme) .heroSection {
-  background: linear-gradient(135deg, rgba(255, 94, 26, 0.08) 0%, rgba(255, 94, 26, 0.01) 100%);
+  background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.06) 0%, rgba(var(--primary-rgb), 0.01) 100%);
 }
 
 :global(.dark-theme) .actionIcon {
@@ -232,5 +232,5 @@
 }
 
 :global(.dark-theme) .actionCard:hover .actionIcon {
-  background-color: rgba(255, 94, 26, 0.15);
+  background-color: rgba(var(--primary-rgb), 0.15);
 }

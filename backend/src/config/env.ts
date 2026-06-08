@@ -8,5 +8,6 @@ export const config = {
   MONGODB_URI: process.env.MONGODB_URI || '',
   REDIS_URL: process.env.REDIS_URL || '',
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
+  JWT_SECRET: process.env.JWT_SECRET || 'qraft-secret-key-12345',
   IS_DEV: process.env.NODE_ENV !== 'production',
 };

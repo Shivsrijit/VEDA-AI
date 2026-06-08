@@ -132,7 +132,7 @@
 
 .dateInput:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px rgba(255, 94, 26, 0.15);
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.25);
 }
 
 .calendarIcon {
@@ -198,7 +198,7 @@
 
 .selectInput:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px rgba(255, 94, 26, 0.15);
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.25);
 }
 
 :global(.dark-theme) .selectInput {
@@ -502,7 +502,7 @@
 
 .timeSelect:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px rgba(255, 94, 26, 0.15);
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.25);
 }
 
 :global(.dark-theme) .timeSelect {

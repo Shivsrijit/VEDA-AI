@@ -6,7 +6,7 @@ import { initializeWebSocketServer } from './ws/websocket';
 import { processAssignmentGeneration } from './workers/generation.worker';
 
 async function bootstrap() {
-  console.log('Starting VedaAI Assessment Creator Backend bootstrap...');
+  console.log('Starting QRaft AI Assessment Creator Backend bootstrap...');
 
   // 1. Establish Database Connection (Mongoose + dynamic in-memory Mongo fallback)
   await connectDB();

@@ -6,7 +6,7 @@ import { useAssignmentStore, API_BASE_URL } from '../store/useAssignmentStore';
 import styles from '../styles/paper.module.css';
 
 export default function QuestionPaper() {
-  const { currentAssignment, setStep, regenerateAssignment, userName } = useAssignmentStore();
+  const { currentAssignment, setStep, regenerateAssignment, userName, token } = useAssignmentStore();
 
   if (!currentAssignment || !currentAssignment.result) {
     return (
@@ -18,53 +18,80 @@ export default function QuestionPaper() {
 
   const { result, _id } = currentAssignment;
  
-   const handleDownloadPDF = async () => {
-     if (!_id) {
-       alert('Assignment details are incomplete.');
-       return;
-     }
+    const handleDownloadPDF = async () => {
+      if (!_id) {
+        alert('Assignment details are incomplete.');
+        return;
+      }
 
-     const fullUrl = `${API_BASE_URL}/assignments/${_id}/download?t=${Date.now()}`;
-     const filename = `${currentAssignment.title.toLowerCase().replace(/[^a-z0-9]+/g, '_')}_question_paper.pdf`;
+      const secureUrl = `${API_BASE_URL}/assignments/${_id}/download?t=${Date.now()}`;
+      const filename = `${currentAssignment.title.toLowerCase().replace(/[^a-z0-9]+/g, '_')}_question_paper.pdf`;
 
-     if (typeof window !== 'undefined' && 'showSaveFilePicker' in window) {
-       try {
-         const handle = await (window as any).showSaveFilePicker({
-           suggestedName: filename,
-           types: [{
-             description: 'PDF Document',
-             accept: { 'application/pdf': ['.pdf'] },
-           }],
-         });
-         
-         const response = await fetch(fullUrl);
-         if (!response.ok) throw new Error('Failed to fetch PDF data');
-         const blob = await response.blob();
-         
-         const writable = await handle.createWritable();
-         await writable.write(blob);
-         await writable.close();
-       } catch (err: any) {
-         if (err.name === 'AbortError') {
-           // User cancelled the file location picker, graceful exit
-           return;
-         }
-         console.warn('showSaveFilePicker failed or cancelled, falling back to standard download:', err);
-         fallbackDownload(fullUrl, filename);
-       }
-     } else {
-       fallbackDownload(fullUrl, filename);
-     }
-   };
+      if (typeof window !== 'undefined' && 'showSaveFilePicker' in window) {
+        try {
+          const handle = await (window as any).showSaveFilePicker({
+            suggestedName: filename,
+            types: [{
+              description: 'PDF Document',
+              accept: { 'application/pdf': ['.pdf'] },
+            }],
+          });
+          
+          const response = await fetch(secureUrl, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          if (!response.ok) throw new Error('Failed to fetch PDF data');
+          const blob = await response.blob();
+          
+          const writable = await handle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+        } catch (err: any) {
+          if (err.name === 'AbortError') {
+            // User cancelled the file location picker, graceful exit
+            return;
+          }
+          console.warn('showSaveFilePicker failed or cancelled, falling back to secure blob download:', err);
+          await downloadViaBlob(secureUrl, filename);
+        }
+      } else {
+        await downloadViaBlob(secureUrl, filename);
+      }
+    };
 
-   const fallbackDownload = (url: string, filename: string) => {
-     const link = document.createElement('a');
-     link.href = url;
-     link.download = filename;
-     document.body.appendChild(link);
-     link.click();
-     document.body.removeChild(link);
-   };
+    const downloadViaBlob = async (url: string, filename: string) => {
+      try {
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (!response.ok) throw new Error('Failed to download PDF');
+        
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+      } catch (err) {
+        console.warn('Secure blob download failed, falling back to query token URL:', err);
+        const fallbackUrl = `${API_BASE_URL}/assignments/${_id}/download?token=${token}&t=${Date.now()}`;
+        const link = document.createElement('a');
+        link.href = fallbackUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    };
 
   const handlePrint = () => {
     window.print();
@@ -86,7 +113,7 @@ export default function QuestionPaper() {
       <div className={`${styles.aiBanner} no-print`}>
         <div className={styles.aiBannerText}>
           <p className={styles.aiBannerTitle}>
-            Certainly, <span className={styles.aiBannerHighlight}>{userName}</span>! Here is the customized Question Paper for your CBSE Class 8 Science/NCERT standard curriculum.
+            Certainly, <span className={styles.aiBannerHighlight}>{userName}</span>! Here is the customized Question Paper for your {result.class} {result.subject} standard curriculum.
           </p>
         </div>
         

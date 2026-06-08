@@ -13,10 +13,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "VedaAI | Assessment Creator",
+  title: "QRaft | Assessment Creator",
   description: "AI-Powered structured question paper generator and academic PDF exporter for teachers.",
   icons: {
-    icon: '/icon.png',
+    icon: '/favicon.ico?v=2',
+    shortcut: '/favicon.ico?v=2',
+    apple: '/icon.png?v=2',
   },
 };
 

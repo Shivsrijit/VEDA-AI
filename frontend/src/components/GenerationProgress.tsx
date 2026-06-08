@@ -94,7 +94,7 @@ export default function GenerationProgress() {
             </span>
           </div>
 
-          <h3 className={styles.cardTitle}>VedaAI is building your paper</h3>
+          <h3 className={styles.cardTitle}>QRaft is building your paper</h3>
           <p className={styles.cardSubtitle} style={{ maxWidth: '400px', margin: '10px auto 0' }}>
             {statusStage}
           </p>

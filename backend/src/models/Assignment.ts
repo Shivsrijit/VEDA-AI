@@ -29,6 +29,7 @@ export interface IQuestionTypeConfig {
 }
 
 export interface IAssignment extends Document {
+  user: mongoose.Types.ObjectId | string;
   title: string;
   schoolName: string;
   subject: string;
@@ -77,6 +78,7 @@ const QuestionTypeConfigSchema = new Schema<IQuestionTypeConfig>({
 
 const AssignmentSchema = new Schema<IAssignment>(
   {
+    user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     title: { type: String, required: true },
     schoolName: { type: String, required: true },
     subject: { type: String, required: true },

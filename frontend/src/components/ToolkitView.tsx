@@ -17,7 +17,7 @@ export default function ToolkitView() {
             AI Toolkit <span style={{ color: '#6366f1' }}>Guidelines</span>
           </h2>
           <p className={styles.subheading}>
-            Learn how to use VedaAI to generate, view, lifecycle-manage, print-preview, and dynamically compile premium assessment documents.
+            Learn how to use QRaft to generate, view, lifecycle-manage, print-preview, and dynamically compile premium assessment documents.
           </p>
         </div>
         <div className={styles.decorativeCircle} style={{ background: 'radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, rgba(99, 102, 241, 0) 70%)' }} />
@@ -45,7 +45,7 @@ export default function ToolkitView() {
 
         {/* Step 2 */}
         <div className={styles.actionCard} style={{ height: 'auto', cursor: 'default' }}>
-          <div className={styles.actionIcon} style={{ backgroundColor: 'rgba(255, 94, 26, 0.1)', color: 'var(--primary)' }}>
+          <div className={styles.actionIcon} style={{ backgroundColor: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)' }}>
             <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.25rem' }}>2</span>
           </div>
           <div className={styles.actionContent} style={{ marginTop: '15px' }}>
@@ -122,7 +122,7 @@ export default function ToolkitView() {
               Click 'Download as PDF' on any generated assignment.
             </p>
             <p className={styles.actionDesc} style={{ marginTop: '8px' }}>
-              VedaAI compiles the assessment details, school header graphics, instructions, and questions into a PDF document, streaming it directly into your local downloads folder.
+              QRaft compiles the assessment details, school header graphics, instructions, and questions into a PDF document, streaming it directly into your local downloads folder.
             </p>
           </div>
         </div>

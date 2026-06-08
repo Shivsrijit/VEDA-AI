@@ -105,11 +105,11 @@ export async function delCache(key: string): Promise<void> {
 }
 
 // Clear matching caches based on entity ID or generic pattern
-export async function invalidateAssignmentsCache(assignmentId?: string): Promise<void> {
-  console.log('Invalidating assignments cache...');
+export async function invalidateAssignmentsCache(userId: string, assignmentId?: string): Promise<void> {
+  console.log(`Invalidating assignments cache for user: ${userId}...`);
   
-  // 1. Invalidate global list cache
-  await delCache('assignments:all');
+  // 1. Invalidate global list cache for this user
+  await delCache(`assignments:user:${userId}:all`);
 
   // 2. Invalidate detailed assignment page cache if specific ID provided
   if (assignmentId) {

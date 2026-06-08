@@ -11,6 +11,8 @@ import {
   downloadAssignmentPDF,
   updateAssignmentLifecycleStatus
 } from './controllers/assignment.controller';
+import { authMiddleware } from './middleware/auth';
+import { register, login, getMe, updateProfile } from './controllers/auth.controller';
 
 const app = express();
 
@@ -55,7 +57,7 @@ app.use('/pdfs', express.static(path.join(__dirname, '../public/pdfs'), {
 // Root Welcome / Redirect API
 app.get('/', (req, res) => {
   res.status(200).json({
-    message: 'Welcome to the VedaAI Assessment Creator API',
+    message: 'Welcome to the QRaft AI Assessment Creator API',
     healthCheck: '/api/health',
     frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000'
   });
@@ -63,16 +65,22 @@ app.get('/', (req, res) => {
 
 // Health Check API
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok', service: 'VedaAI Assessment Creator API' });
+  res.status(200).json({ status: 'ok', service: 'QRaft AI Assessment Creator API' });
 });
 
-// RESTful Core API Endpoints
-app.post('/api/assignments', createAssignment);
-app.get('/api/assignments', getAssignments);
-app.get('/api/assignments/:id', getAssignmentById);
-app.get('/api/assignments/:id/download', downloadAssignmentPDF);
-app.post('/api/assignments/:id/regenerate', regenerateAssignment);
-app.delete('/api/assignments/:id', deleteAssignment);
-app.patch('/api/assignments/:id/status', updateAssignmentLifecycleStatus);
+// Authentication Routes
+app.post('/api/auth/register', register);
+app.post('/api/auth/login', login);
+app.get('/api/auth/me', authMiddleware, getMe);
+app.put('/api/auth/update', authMiddleware, updateProfile);
+
+// RESTful Core API Endpoints (Protected by Auth)
+app.post('/api/assignments', authMiddleware, createAssignment);
+app.get('/api/assignments', authMiddleware, getAssignments);
+app.get('/api/assignments/:id', authMiddleware, getAssignmentById);
+app.get('/api/assignments/:id/download', authMiddleware, downloadAssignmentPDF);
+app.post('/api/assignments/:id/regenerate', authMiddleware, regenerateAssignment);
+app.delete('/api/assignments/:id', authMiddleware, deleteAssignment);
+app.patch('/api/assignments/:id/status', authMiddleware, updateAssignmentLifecycleStatus);
 
 export default app;

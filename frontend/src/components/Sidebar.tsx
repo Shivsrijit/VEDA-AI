@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { LayoutGrid, Presentation, FileText, Book, PieChart, Settings, Sparkles } from 'lucide-react';
+import { LayoutGrid, FileText, Book, Settings, FilePlus } from 'lucide-react';
 import { useAssignmentStore } from '../store/useAssignmentStore';
 import styles from '../styles/sidebar.module.css';
 
@@ -11,7 +11,7 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
-export default function Sidebar({ activeTab = 'assignments', isOpen = false, onClose }: SidebarProps) {
+export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const { 
     setView, 
     setStep, 
@@ -40,10 +40,10 @@ export default function Sidebar({ activeTab = 'assignments', isOpen = false, onC
     <aside className={`${styles.sidebar} ${isOpen ? styles.sidebarOpen : ''}`}>
       <div className={styles.logoContainer} onClick={handleGoToList} style={{ cursor: 'pointer' }}>
         <div className={styles.logoIcon} style={{ background: 'none', boxShadow: 'none' }}>
-          <img src="/logo.png" alt="VedaAI Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '10px' }} />
+          <img src="/logo.png" alt="QRaft Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '10px' }} />
         </div>
         <span className={styles.logoText}>
-          VedaAI
+          Q<span className={styles.logoTextOrange}>Raft</span>
         </span>
       </div>
 
@@ -52,7 +52,7 @@ export default function Sidebar({ activeTab = 'assignments', isOpen = false, onC
         className={styles.sidebarCreateBtn} 
         onClick={handleCreateNew}
       >
-        <Sparkles size={20} fill="currentColor" />
+        <FilePlus size={20} />
         <span>Create Assignment</span>
       </button>
 
@@ -71,14 +71,6 @@ export default function Sidebar({ activeTab = 'assignments', isOpen = false, onC
             <div className={styles.navLinkLeft}>
               <LayoutGrid size={18} />
               <span>Home</span>
-            </div>
-          </a>
-        </li>
-        <li className={styles.navItem}>
-          <a href="#" className={styles.navLink} onClick={(e) => e.preventDefault()}>
-            <div className={styles.navLinkLeft}>
-              <Presentation size={18} />
-              <span>My Groups</span>
             </div>
           </a>
         </li>
@@ -111,14 +103,6 @@ export default function Sidebar({ activeTab = 'assignments', isOpen = false, onC
             <div className={styles.navLinkLeft}>
               <Book size={18} />
               <span>AI Teacher's Toolkit</span>
-            </div>
-          </a>
-        </li>
-        <li className={styles.navItem}>
-          <a href="#" className={styles.navLink} onClick={(e) => e.preventDefault()}>
-            <div className={styles.navLinkLeft}>
-              <PieChart size={18} />
-              <span>My Library</span>
             </div>
           </a>
         </li>

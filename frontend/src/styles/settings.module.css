@@ -142,7 +142,7 @@
 
 .inputWithPreview input:focus, .formGroup input:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px rgba(255, 94, 26, 0.15);
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.2);
   background-color: var(--bg-card);
 }
 
@@ -207,6 +207,7 @@
   gap: 15px;
   margin-top: 15px;
   margin-bottom: 50px;
+  width: 100%;
 }
 
 .cancelBtn {
@@ -224,20 +225,38 @@
   color: var(--text-primary);
 }
 
+.logoutBtn {
+  padding: 12px 28px;
+  border-radius: 9999px;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  background-color: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
+  font-weight: 600;
+  font-size: 0.938rem;
+  transition: all 0.2s ease;
+  margin-right: auto;
+}
+
+.logoutBtn:hover {
+  background-color: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.35);
+  transform: translateY(-1px);
+}
+
 .saveBtn {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 12px 32px;
   border-radius: 9999px;
-  background: linear-gradient(135deg, var(--primary) 0%, #ff8b3d 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, #a67f3b 100%);
   color: #ffffff;
   font-weight: 600;
   font-size: 0.938rem;
-  box-shadow: 0 4px 14px rgba(255, 94, 26, 0.25);
+  box-shadow: 0 4px 14px rgba(var(--primary-rgb), 0.2);
 }
 
 .saveBtn:hover {
-  box-shadow: 0 6px 18px rgba(255, 94, 26, 0.35);
+  box-shadow: 0 6px 18px rgba(var(--primary-rgb), 0.3);
   transform: translateY(-1px);
 }

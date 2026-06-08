@@ -149,7 +149,7 @@
 
 .searchCapsuleWrapper .searchInput:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(255, 94, 26, 0.15);
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.2);
 }
 
 /* Option dropdown styling for Dark & Light modes inside dashboard */
@@ -183,8 +183,8 @@
 }
 
 .card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-4.5px) scale(1.012);
+  box-shadow: var(--shadow-glow, 0 0 15px rgba(var(--primary-rgb), 0.2)), var(--shadow-lg);
   border-color: var(--primary);
 }
 
@@ -396,7 +396,7 @@
     justify-content: center;
     border-radius: 50% !important; /* circular */
     background-color: #ffffff !important; /* white background */
-    color: #ff5e1a !important; /* orange plus icon */
+    color: var(--primary) !important; /* active state highlighted signature indigo */
     border: 1.5px solid var(--border-color) !important;
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15) !important;
   }
@@ -564,7 +564,7 @@
 }
 
 .lifecycleSelect:focus {
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.2);
 }
 
 /* Color schemes for light mode AND dark mode support */

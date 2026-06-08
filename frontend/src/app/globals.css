@@ -3,24 +3,26 @@
 /* Core Color System Tokens */
 :root {
   /* Colors */
-  --bg-main: #eaeaea; /* clean grey layout background matching mockup */
+  --bg-main: #f4f5f7; /* clean grey layout background matching mockup */
   --bg-card: rgba(255, 255, 255, 0.90); /* slightly reduced opacity white cards for glassy reference UI */
   --bg-sidebar: rgba(255, 255, 255, 0.90); /* matching sidebar opacity */
   --sidebar-text: #475569; /* slate-600 */
   --sidebar-text-active: #0f172a; /* slate-900 */
   --sidebar-item-hover: #f3f4f6; /* slate-100 */
-  --sidebar-item-active: #ff5e1a; /* Veda Signature Orange */
+  --sidebar-item-active: #f3b03b; /* Bright warm gold active item */
   
   --text-primary: #0f172a; /* slate-900 */
   --text-secondary: #475569; /* slate-600 */
   --text-muted: #94a3b8; /* slate-400 */
   
   --border-color: #e2e8f0; /* slate-200 */
-  --border-focus: #ff5e1a;
+  --border-focus: #f3b03b;
   
-  --primary: #ff5e1a;
-  --primary-hover: #e04f10;
-  --primary-light: rgba(255, 94, 26, 0.08);
+  --primary: #f3b03b;
+  --primary-hover: #d68f18;
+  --primary-light: rgba(243, 176, 59, 0.08);
+  --primary-rgb: 243, 176, 59;
+  --secondary-rgb: 214, 143, 24;
   
   --easy: #10b981;
   --easy-light: rgba(16, 185, 129, 0.1);
@@ -33,7 +35,7 @@
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.08);
-  --shadow-glow: 0 0 15px rgba(255, 94, 26, 0.35);
+  --shadow-glow: 0 0 20px rgba(243, 176, 59, 0.3);
 
   /* Typography */
   --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -42,16 +44,18 @@
 
 /* Dark Mode Override Tokens */
 .dark-theme {
-  --bg-main: #0b0f19; /* deep slate-950 main panel bg */
-  --bg-card: rgba(21, 29, 48, 0.90); /* slate-900 card bg with slightly reduced opacity */
-  --bg-sidebar: rgba(21, 29, 48, 0.90); /* dark sidebar matching card bg */
+  --bg-main: #060709; /* very deep slate-950 obsidian space canvas bg */
+  --bg-card: rgba(22, 24, 29, 0.8); /* obsidian black / gold translucent card bg with higher opacity to pop */
+  --bg-sidebar: rgba(15, 17, 21, 0.9); /* dark sidebar matching card bg */
   --sidebar-text: #cbd5e1;
   --sidebar-text-active: #f8fafc;
   --sidebar-item-hover: rgba(255, 255, 255, 0.05);
   --text-primary: #f8fafc; /* slate-50 bright primary text */
   --text-secondary: #cbd5e1; /* slate-300 secondary text */
-  --text-muted: #64748b; /* slate-500 muted labels */
-  --border-color: #1e293b; /* slate-800 divider borders */
+  --text-muted: #6b7280; /* slate-500 muted labels */
+  --border-color: rgba(243, 176, 59, 0.18); /* brighter gold borders */
+  --border-focus: #f3b03b; /* gold glowing border on focus */
+  --shadow-glow: 0 0 25px rgba(243, 176, 59, 0.35); /* stronger gold glow */
 }
 
 /* Custom Reset */
@@ -167,12 +171,12 @@ input, textarea, select {
   border-radius: 8px;
   padding: 10px 14px;
   outline: none;
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 input:focus, textarea:focus, select:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px rgba(255, 94, 26, 0.15);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
 }
 
 /* Interactive custom badges */

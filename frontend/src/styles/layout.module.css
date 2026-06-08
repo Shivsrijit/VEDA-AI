@@ -104,7 +104,7 @@
     justify-content: center;
     width: 32px;
     height: 32px;
-    background: linear-gradient(135deg, var(--primary) 0%, #ff8b3d 100%);
+    background: linear-gradient(135deg, var(--primary) 0%, #a67f3b 100%);
     border-radius: 8px;
   }
 
@@ -282,7 +282,7 @@
   right: 8px;
   width: 8px;
   height: 8px;
-  background-color: #ff5e1a; /* mockup signature orange-red */
+  background-color: var(--primary); /* Aether signature indigo */
   border: 1.5px solid var(--bg-card);
   border-radius: 50%;
 }
@@ -388,6 +388,6 @@
   }
 
   .mobileNavItemActive svg {
-    color: #ff5e1a !important; /* active state highlighted signature orange */
+    color: var(--primary) !important; /* active state highlighted signature indigo */
   }
 }

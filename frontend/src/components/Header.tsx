@@ -101,10 +101,10 @@ export default function Header({ title = 'Assignments' }: HeaderProps) {
         <div className={styles.mobileTopBar}>
           <div className={styles.mobileLogo}>
             <div className={styles.logoIconMini} style={{ background: 'none', boxShadow: 'none' }}>
-              <img src="/logo.png" alt="VedaAI Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '8px' }} />
+              <img src="/logo.png" alt="QRaft Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '8px' }} />
             </div>
             <span className={styles.logoTextMini}>
-              Veda<span className={styles.logoTextOrange}>AI</span>
+              QRaft
             </span>
           </div>
 

@@ -30,10 +30,10 @@
   justify-content: center;
   width: 38px;
   height: 38px;
-  background: linear-gradient(135deg, var(--primary) 0%, #ff8b3d 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, #a67f3b 100%);
   color: #ffffff;
   border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(255, 94, 26, 0.3);
+  box-shadow: 0 4px 10px rgba(var(--primary-rgb), 0.3);
 }
 
 .logoText {
@@ -58,21 +58,21 @@
   padding: 14px 24px;
   border-radius: 9999px;
   background: linear-gradient(180deg, #2e2e30 0%, #1b1c1e 100%); /* Deep rich dark gradient */
-  border: 3.5px solid #ff7a45; /* Distinct thick coral-orange border */
+  border: 3.5px solid var(--primary); /* Gilded Gold border */
   color: #ffffff;
   font-family: var(--font-display);
   font-weight: 600;
   font-size: 1.05rem;
   margin-bottom: 25px;
-  box-shadow: 0 4px 20px rgba(255, 122, 69, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 20px rgba(var(--primary-rgb), 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.15);
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sidebarCreateBtn:hover {
   background: linear-gradient(180deg, #3a3a3c 0%, #202123 100%); /* Maintain deep slate-dark gradient on hover */
-  border-color: #ff9e79; /* Slightly brighter coral-orange border on hover */
-  box-shadow: 0 6px 24px rgba(255, 122, 69, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+  border-color: #ebd09c; /* Brighter gold/champagne border on hover */
+  box-shadow: 0 6px 24px rgba(var(--primary-rgb), 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.25);
   transform: translateY(-1px);
 }
 
@@ -124,7 +124,7 @@
   background-color: rgba(255, 255, 255, 0.08);
 }
 
-/* Specific active marker for Veda toolkit styling */
+/* Specific active marker for toolkit styling */
 .navLinkActive svg {
   color: var(--primary) !important;
 }
@@ -139,7 +139,7 @@
   border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 700;
-  background-color: #ff5e1a; /* mockup orange badge */
+  background-color: var(--primary); /* Aether premium badge */
   color: #ffffff;
 }
 
